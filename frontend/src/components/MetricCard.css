@@ -1,0 +1,70 @@
+.metric-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border-left: 4px solid;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.metric-card.metric-good {
+  border-left-color: #10b981;
+}
+
+.metric-card.metric-warning {
+  border-left-color: #f59e0b;
+}
+
+.metric-card.metric-critical {
+  border-left-color: #ef4444;
+}
+
+.metric-icon {
+  font-size: 36px;
+  line-height: 1;
+}
+
+.metric-content {
+  flex: 1;
+}
+
+.metric-label {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.metric-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.metric-status {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metric-good .metric-status {
+  color: #10b981;
+}
+
+.metric-warning .metric-status {
+  color: #f59e0b;
+}
+
+.metric-critical .metric-status {
+  color: #ef4444;
+}

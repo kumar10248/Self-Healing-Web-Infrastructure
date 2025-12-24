@@ -1,0 +1,55 @@
+/**
+ * Feature 6 (Part-B): Main App Component
+ * 
+ * Navigation and routing for the dashboard
+ */
+
+import React, { useState } from 'react';
+import Dashboard from './pages/Dashboard';
+import Alerts from './pages/Alerts';
+import './App.css';
+
+function App() {
+  const [currentPage, setCurrentPage] = useState('dashboard');
+
+  const renderPage = () => {
+    switch (currentPage) {
+      case 'dashboard':
+        return <Dashboard />;
+      case 'alerts':
+        return <Alerts />;
+      default:
+        return <Dashboard />;
+    }
+  };
+
+  return (
+    <div className="app">
+      <nav className="navbar">
+        <div className="nav-brand">
+          <span className="brand-icon">🔧</span>
+          <span className="brand-text">Self-Healing Infra</span>
+        </div>
+        <div className="nav-links">
+          <button
+            className={`nav-link ${currentPage === 'dashboard' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('dashboard')}
+          >
+            📊 Dashboard
+          </button>
+          <button
+            className={`nav-link ${currentPage === 'alerts' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('alerts')}
+          >
+            🚨 Alerts
+          </button>
+        </div>
+      </nav>
+      <main className="main-content">
+        {renderPage()}
+      </main>
+    </div>
+  );
+}
+
+export default App;

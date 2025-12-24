@@ -1,0 +1,22 @@
+{
+  "name": "self-healing-agent",
+  "version": "1.0.0",
+  "description": "Monitoring agent for self-healing infrastructure platform",
+  "main": "agent.js",
+  "scripts": {
+    "start": "node agent.js",
+    "test": "bash collectors/cpu.sh && bash collectors/memory.sh && bash collectors/disk.sh"
+  },
+  "keywords": [
+    "monitoring",
+    "self-healing",
+    "infrastructure",
+    "linux",
+    "metrics"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
