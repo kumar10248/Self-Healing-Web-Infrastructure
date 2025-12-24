@@ -20,11 +20,12 @@ export default function LineChart({ data, title, color = '#3b82f6', threshold })
     const width = canvas.width;
     const height = canvas.height;
 
-    // Clear canvas
-    ctx.clearRect(0, 0, width, height);
+    // Clear canvas with dark background
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.4)';
+    ctx.fillRect(0, 0, width, height);
 
     // Chart dimensions
-    const padding = 40;
+    const padding = 50;
     const chartWidth = width - padding * 2;
     const chartHeight = height - padding * 2;
 
@@ -34,9 +35,20 @@ export default function LineChart({ data, title, color = '#3b82f6', threshold })
     const maxValue = Math.max(...values);
     const range = maxValue - minValue || 1; // Avoid division by zero
 
-    // Draw axes
-    ctx.strokeStyle = '#e5e7eb';
+    // Draw grid lines (horizontal) with glow
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.15)';
     ctx.lineWidth = 1;
+    for (let i = 0; i <= 5; i++) {
+      const y = padding + (chartHeight / 5) * i;
+      ctx.beginPath();
+      ctx.moveTo(padding, y);
+      ctx.lineTo(width - padding, y);
+      ctx.stroke();
+    }
+
+    // Draw axes with glow
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.3)';
+    ctx.lineWidth = 2;
 
     // Y-axis
     ctx.beginPath();
@@ -50,44 +62,67 @@ export default function LineChart({ data, title, color = '#3b82f6', threshold })
     ctx.lineTo(width - padding, height - padding);
     ctx.stroke();
 
-    // Draw grid lines (horizontal)
-    ctx.strokeStyle = '#f3f4f6';
-    for (let i = 0; i <= 5; i++) {
-      const y = padding + (chartHeight / 5) * i;
-      ctx.beginPath();
-      ctx.moveTo(padding, y);
-      ctx.lineTo(width - padding, y);
-      ctx.stroke();
-    }
-
-    // Draw Y-axis labels
-    ctx.fillStyle = '#6b7280';
-    ctx.font = '11px sans-serif';
+    // Draw Y-axis labels with enhanced visibility
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+    ctx.shadowBlur = 4;
+    ctx.fillStyle = '#f1f5f9';
+    ctx.font = 'bold 13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
     
     for (let i = 0; i <= 5; i++) {
       const value = maxValue - (range / 5) * i;
       const y = padding + (chartHeight / 5) * i;
-      ctx.fillText(value.toFixed(1) + '%', padding - 10, y);
+      ctx.fillText(value.toFixed(1) + '%', padding - 15, y);
     }
+    
+    // Reset shadow for next drawings
+    ctx.shadowBlur = 0;
 
-    // Draw threshold line if provided
+    // Draw threshold line if provided with glow
     if (threshold !== undefined) {
       const thresholdY = height - padding - ((threshold - minValue) / range) * chartHeight;
+      
+      // Glow effect
+      ctx.shadowColor = '#ef4444';
+      ctx.shadowBlur = 15;
       ctx.strokeStyle = '#ef4444';
       ctx.lineWidth = 2;
-      ctx.setLineDash([5, 5]);
+      ctx.setLineDash([8, 4]);
       ctx.beginPath();
       ctx.moveTo(padding, thresholdY);
       ctx.lineTo(width - padding, thresholdY);
       ctx.stroke();
       ctx.setLineDash([]);
+      ctx.shadowBlur = 0;
     }
 
-    // Draw line chart
+    // Draw gradient fill area under the line
+    const gradient = ctx.createLinearGradient(0, padding, 0, height - padding);
+    gradient.addColorStop(0, color + '40');
+    gradient.addColorStop(1, color + '00');
+
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.moveTo(padding, height - padding);
+
+    data.forEach((point, index) => {
+      const x = padding + (chartWidth / (data.length - 1)) * index;
+      const y = height - padding - ((point.value - minValue) / range) * chartHeight;
+      ctx.lineTo(x, y);
+    });
+
+    ctx.lineTo(width - padding, height - padding);
+    ctx.closePath();
+    ctx.fill();
+
+    // Draw line chart with glow
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 10;
     ctx.strokeStyle = color;
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
     ctx.beginPath();
 
     data.forEach((point, index) => {
@@ -102,38 +137,65 @@ export default function LineChart({ data, title, color = '#3b82f6', threshold })
     });
 
     ctx.stroke();
+    ctx.shadowBlur = 0;
 
-    // Draw points
-    ctx.fillStyle = color;
+    // Draw points with glow and white center
     data.forEach((point, index) => {
       const x = padding + (chartWidth / (data.length - 1)) * index;
       const y = height - padding - ((point.value - minValue) / range) * chartHeight;
 
+      // Outer glow
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 15;
+      ctx.fillStyle = color;
       ctx.beginPath();
-      ctx.arc(x, y, 3, 0, 2 * Math.PI);
+      ctx.arc(x, y, 5, 0, 2 * Math.PI);
+      ctx.fill();
+
+      // Inner white dot
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(x, y, 2, 0, 2 * Math.PI);
       ctx.fill();
     });
 
-    // Draw time labels (show first, middle, last)
-    ctx.fillStyle = '#6b7280';
-    ctx.font = '10px sans-serif';
+    // Draw time labels with enhanced visibility
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+    ctx.shadowBlur = 4;
+    ctx.fillStyle = '#f1f5f9';
+    ctx.font = 'bold 12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
 
+    // Format timestamp to local time with better formatting
+    const formatTime = (timestamp) => {
+      const date = new Date(timestamp);
+      // Use local timezone format
+      return date.toLocaleTimeString('en-IN', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true 
+      });
+    };
+
     if (data.length > 0) {
       // First timestamp
-      const firstTime = new Date(data[0].timestamp).toLocaleTimeString();
-      ctx.fillText(firstTime, padding, height - padding + 10);
+      const firstTime = formatTime(data[0].timestamp);
+      ctx.fillText(firstTime, padding, height - padding + 15);
 
       // Last timestamp
-      const lastTime = new Date(data[data.length - 1].timestamp).toLocaleTimeString();
-      ctx.fillText(lastTime, width - padding, height - padding + 10);
+      const lastTime = formatTime(data[data.length - 1].timestamp);
+      ctx.fillText(lastTime, width - padding, height - padding + 15);
 
       // Middle timestamp
-      const middleIdx = Math.floor(data.length / 2);
-      const middleTime = new Date(data[middleIdx].timestamp).toLocaleTimeString();
-      const middleX = padding + (chartWidth / (data.length - 1)) * middleIdx;
-      ctx.fillText(middleTime, middleX, height - padding + 10);
+      if (data.length > 2) {
+        const middleIdx = Math.floor(data.length / 2);
+        const middleTime = formatTime(data[middleIdx].timestamp);
+        const middleX = padding + (chartWidth / (data.length - 1)) * middleIdx;
+        ctx.fillText(middleTime, middleX, height - padding + 15);
+      }
     }
 
   }, [data, color, threshold]);
@@ -171,8 +233,8 @@ export default function LineChart({ data, title, color = '#3b82f6', threshold })
       </div>
       <canvas
         ref={canvasRef}
-        width={800}
-        height={300}
+        width={1000}
+        height={350}
         className="chart-canvas"
       />
       <div className="chart-footer">

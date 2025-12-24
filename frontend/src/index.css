@@ -1,5 +1,5 @@
 /**
- * Feature 6 (Part-B): Global Styles
+ * Feature 6 (Part-B): Global Styles - Dark Mode
  */
 
 * {
@@ -14,8 +14,9 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #f3f4f6;
-  color: #111827;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: #e2e8f0;
+  min-height: 100vh;
 }
 
 code {

@@ -31,7 +31,11 @@ function App() {
       <nav className="navbar">
         <div className="nav-brand">
           <span className="brand-icon">🔧</span>
-          <span className="brand-text">Self-Healing Infra</span>
+          <span className="brand-text">
+            <span className="brand-white">Self-Healing</span>
+            {' '}
+            <span className="brand-black">Infra</span>
+          </span>
         </div>
         <div className="nav-links">
           <button

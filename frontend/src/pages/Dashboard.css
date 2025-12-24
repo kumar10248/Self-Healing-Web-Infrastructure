@@ -1,27 +1,32 @@
 .dashboard {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 32px;
+  padding: 40px 32px;
 }
 
 .dashboard-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 32px;
+  margin-bottom: 40px;
 }
 
 .dashboard-header h1 {
-  font-size: 32px;
-  font-weight: 700;
-  color: #111827;
+  font-size: 36px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin: 0 0 8px 0;
+  text-shadow: 0 0 30px rgba(245, 158, 11, 0.3);
 }
 
 .dashboard-subtitle {
-  color: #6b7280;
-  font-size: 14px;
+  color: #94a3b8;
+  font-size: 15px;
   margin: 0;
+  font-weight: 500;
 }
 
 .dashboard-loading {
@@ -30,17 +35,18 @@
   align-items: center;
   justify-content: center;
   min-height: 400px;
-  color: #6b7280;
+  color: #64748b;
 }
 
 .spinner {
-  width: 48px;
-  height: 48px;
-  border: 4px solid #e5e7eb;
+  width: 56px;
+  height: 56px;
+  border: 5px solid rgba(59, 130, 246, 0.2);
   border-top-color: #3b82f6;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
 }
 
 @keyframes spin {
@@ -48,14 +54,26 @@
 }
 
 .section {
-  margin-bottom: 32px;
+  margin-bottom: 40px;
 }
 
 .section-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: #111827;
-  margin: 0 0 16px 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin: 0 0 20px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-title::before {
+  content: '';
+  width: 4px;
+  height: 24px;
+  background: linear-gradient(180deg, #f59e0b 0%, #fbbf24 100%);
+  border-radius: 2px;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
 }
 
 .metrics-grid {
@@ -65,10 +83,12 @@
 }
 
 .healing-history {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(148, 163, 184, 0.1);
 }
 
 .healing-table {
@@ -77,69 +97,85 @@
 }
 
 .healing-table thead {
-  background: #f9fafb;
+  background: rgba(51, 65, 85, 0.6);
 }
 
 .healing-table th {
   text-align: left;
-  padding: 12px 16px;
+  padding: 16px 18px;
   font-size: 14px;
-  font-weight: 600;
-  color: #6b7280;
-  border-bottom: 2px solid #e5e7eb;
+  font-weight: 700;
+  color: #94a3b8;
+  border-bottom: 2px solid rgba(59, 130, 246, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .healing-table td {
-  padding: 16px;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 18px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  color: #cbd5e1;
+}
+
+.healing-table tbody tr {
+  transition: all 0.3s ease;
 }
 
 .healing-table tbody tr:hover {
-  background: #f9fafb;
+  background: rgba(59, 130, 246, 0.1);
+  transform: scale(1.01);
 }
 
 .action-icon {
   margin-right: 8px;
-  font-size: 18px;
+  font-size: 20px;
+  filter: drop-shadow(0 0 5px currentColor);
 }
 
 .target-cell {
-  font-weight: 600;
-  color: #374151;
+  font-weight: 700;
+  color: #e2e8f0;
 }
 
 .timestamp-cell {
-  color: #6b7280;
+  color: #94a3b8;
   font-size: 13px;
+  font-weight: 500;
 }
 
 .badge {
   display: inline-block;
-  padding: 4px 12px;
-  border-radius: 12px;
+  padding: 6px 14px;
+  border-radius: 20px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .badge-success {
-  background: #d1fae5;
-  color: #065f46;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
 }
 
 .badge-failure {
-  background: #fee2e2;
-  color: #991b1b;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
 }
 
 .empty-state {
   text-align: center;
-  padding: 40px;
-  color: #6b7280;
+  padding: 60px 40px;
+  color: #64748b;
+  font-size: 16px;
+  font-weight: 500;
 }
 
 @media (max-width: 768px) {
   .dashboard {
-    padding: 16px;
+    padding: 20px 16px;
   }
 
   .metrics-grid {
@@ -147,6 +183,6 @@
   }
 
   .dashboard-header h1 {
-    font-size: 24px;
+    font-size: 28px;
   }
 }

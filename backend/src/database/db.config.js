@@ -17,10 +17,18 @@ const dbConfig = {
   max: 20, // Maximum number of clients in pool
   idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
   connectionTimeoutMillis: 5000, // Return error after 5 seconds if no connection available
+  
+  // Force UTC timezone for all connections
+  options: '-c timezone=UTC',
 };
 
 // Create connection pool
 const pool = new Pool(dbConfig);
+
+// Set timezone to UTC for all connections
+pool.on('connect', (client) => {
+  client.query('SET timezone = "UTC"');
+});
 
 // Log connection errors
 pool.on('error', (err) => {

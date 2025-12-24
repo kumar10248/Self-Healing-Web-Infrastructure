@@ -85,7 +85,18 @@ const Alerts = () => {
     return date.toLocaleString();
   };
 
-  const uniqueTypes = ['all', ...new Set(alerts.map(alert => alert.type))];
+  // All possible alert types (static list + dynamic from alerts)
+  const allAlertTypes = [
+    'SERVICE_DOWN',
+    'SERVICE_RECOVERED',
+    'RESOURCE_HIGH',
+    'HEALING_TRIGGERED',
+    'HEALING_SUCCESS',
+    'HEALING_FAILED',
+    'MAX_RETRIES_EXCEEDED',
+  ];
+  
+  const uniqueTypes = ['all', ...new Set([...allAlertTypes, ...alerts.map(alert => alert.type)])];
 
   return (
     <div className="alerts-page">
@@ -101,7 +112,11 @@ const Alerts = () => {
       {/* Filter Bar */}
       <div className="filter-bar">
         <label>Filter by type:</label>
-        <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+        <select 
+          value={filterType} 
+          onChange={(e) => setFilterType(e.target.value)}
+          className="filter-select"
+        >
           {uniqueTypes.map(type => (
             <option key={type} value={type}>
               {type === 'all' ? 'All Alerts' : type.replace(/_/g, ' ')}

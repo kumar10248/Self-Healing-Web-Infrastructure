@@ -45,7 +45,19 @@ exports.insertAlert = async (alertData) => {
  * Get all alerts (with optional filters)
  */
 exports.getAlerts = async (filters = {}) => {
-  let query = 'SELECT * FROM alerts';
+  let query = `SELECT 
+    id,
+    type,
+    severity,
+    message,
+    host,
+    service,
+    resource,
+    value,
+    threshold,
+    TO_CHAR(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') as timestamp,
+    TO_CHAR(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') as created_at
+  FROM alerts`;
   const conditions = [];
   const values = [];
   
@@ -136,7 +148,16 @@ exports.insertHealingAction = async (actionData) => {
  * Get healing actions history (with optional filters)
  */
 exports.getHealingActions = async (filters = {}) => {
-  let query = 'SELECT * FROM healing_actions';
+  let query = `SELECT 
+    id,
+    action,
+    target,
+    result,
+    details,
+    host,
+    TO_CHAR(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') as timestamp,
+    TO_CHAR(created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') as created_at
+  FROM healing_actions`;
   const conditions = [];
   const values = [];
   
@@ -222,7 +243,14 @@ exports.insertMetric = async (metricData) => {
  */
 exports.getLatestMetric = async (host) => {
   const query = `
-    SELECT * FROM metrics
+    SELECT 
+      id,
+      host,
+      cpu,
+      memory,
+      disk,
+      TO_CHAR(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') as timestamp
+    FROM metrics
     WHERE host = $1
     ORDER BY timestamp DESC
     LIMIT 1
@@ -242,7 +270,14 @@ exports.getLatestMetric = async (host) => {
  */
 exports.getMetrics = async (host, limit = 100) => {
   const query = `
-    SELECT * FROM metrics
+    SELECT 
+      id,
+      host,
+      cpu,
+      memory,
+      disk,
+      TO_CHAR(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') as timestamp
+    FROM metrics
     WHERE host = $1
     ORDER BY timestamp DESC
     LIMIT $2

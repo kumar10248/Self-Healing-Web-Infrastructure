@@ -12,20 +12,43 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [policies, setPolicies] = useState(null);
+  const [hostname, setHostname] = useState(null);
 
-  // Fetch historical metrics
+  // Fetch hostname from latest metrics first
   useEffect(() => {
+    fetchHostname();
+  }, []);
+
+  // Fetch historical metrics after we have hostname
+  useEffect(() => {
+    if (!hostname) return;
+    
     fetchHistoricalMetrics();
     fetchPolicies();
 
     // Refresh every 30 seconds
     const interval = setInterval(fetchHistoricalMetrics, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [hostname]);
+
+  const fetchHostname = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/metrics/latest');
+      const data = await response.json();
+      if (data.success && data.data) {
+        setHostname(data.data.host);
+      }
+    } catch (err) {
+      console.error('Failed to fetch hostname:', err);
+      // Fallback to localhost if unable to get hostname
+      setHostname('localhost');
+    }
+  };
 
   const fetchHistoricalMetrics = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/history/metrics?host=localhost&limit=2880');
+      const host = hostname || 'localhost';
+      const response = await fetch(`http://localhost:5000/api/history/metrics?host=${host}&limit=2880`);
       const data = await response.json();
 
       if (data.success) {

@@ -1,45 +1,90 @@
 /**
- * Phase 4: LineChart Styles
+ * Phase 4: LineChart Styles - Beautiful Dark Mode
  */
 
 .line-chart {
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 24px;
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  margin-bottom: 28px;
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.line-chart::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #f59e0b, #fbbf24, #fcd34d, #fde68a, #fef3c7);
+  background-size: 200% 100%;
+  animation: gradient-shift 3s ease infinite;
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 
 .chart-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 16px;
 }
 
 .chart-header h3 {
   margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #1f2937;
+  font-size: 24px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 2px 20px rgba(245, 158, 11, 0.5);
+  letter-spacing: 0.5px;
+  filter: drop-shadow(0 0 20px rgba(245, 158, 11, 0.4));
 }
 
 .chart-stats {
   display: flex;
-  gap: 16px;
+  gap: 20px;
   flex-wrap: wrap;
 }
 
 .chart-stats .stat {
-  font-size: 13px;
-  color: #6b7280;
+  font-size: 15px;
+  color: #cbd5e1;
+  font-weight: 700;
+  padding: 10px 18px;
+  background: rgba(51, 65, 85, 0.7);
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  transition: all 0.3s ease;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.chart-stats .stat:hover {
+  transform: translateY(-3px);
+  background: rgba(245, 158, 11, 0.2);
+  border-color: rgba(245, 158, 11, 0.5);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
 }
 
 .chart-stats .stat strong {
-  color: #1f2937;
-  font-weight: 600;
+  color: #f1f5f9;
+  font-size: 17px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  font-weight: 800;
+  margin-left: 4px;
+  text-shadow: 0 0 10px rgba(226, 232, 240, 0.3);
 }
 
 .chart-canvas {
@@ -47,40 +92,51 @@
   width: 100%;
   height: auto;
   max-width: 100%;
+  border-radius: 12px;
+  filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.3));
 }
 
 .chart-footer {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid #e5e7eb;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .data-info {
   margin: 0;
-  font-size: 12px;
-  color: #9ca3af;
+  font-size: 14px;
+  color: #cbd5e1;
   text-align: center;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .no-data {
   text-align: center;
-  padding: 60px 20px;
-  color: #9ca3af;
+  padding: 80px 20px;
+  color: #cbd5e1;
 }
 
 .no-data p {
-  margin: 8px 0;
+  margin: 0 0 12px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #f1f5f9;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
 .no-data .hint {
-  font-size: 13px;
-  color: #d1d5db;
+  color: #94a3b8;
+  font-size: 15px;
+  font-weight: 600;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 /* Responsive design */
 @media (max-width: 768px) {
   .line-chart {
-    padding: 16px;
+    padding: 20px;
   }
 
   .chart-header {
@@ -90,9 +146,11 @@
 
   .chart-stats {
     gap: 12px;
+    width: 100%;
   }
 
   .chart-stats .stat {
     font-size: 12px;
+    padding: 6px 12px;
   }
 }
