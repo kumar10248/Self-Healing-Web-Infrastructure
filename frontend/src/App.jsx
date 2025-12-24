@@ -7,6 +7,7 @@
 import React, { useState } from 'react';
 import Dashboard from './pages/Dashboard';
 import Alerts from './pages/Alerts';
+import HistoryPage from './pages/HistoryPage'; // Phase 4: Historical metrics
 import './App.css';
 
 function App() {
@@ -18,6 +19,8 @@ function App() {
         return <Dashboard />;
       case 'alerts':
         return <Alerts />;
+      case 'history':
+        return <HistoryPage />;
       default:
         return <Dashboard />;
     }
@@ -36,6 +39,12 @@ function App() {
             onClick={() => setCurrentPage('dashboard')}
           >
             📊 Dashboard
+          </button>
+          <button
+            className={`nav-link ${currentPage === 'history' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('history')}
+          >
+            📈 History
           </button>
           <button
             className={`nav-link ${currentPage === 'alerts' ? 'active' : ''}`}

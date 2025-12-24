@@ -8,6 +8,7 @@ const alertsRoutes = require("./routes/alerts.routes");
 const dashboardRoutes = require("./routes/dashboard.routes");
 const dashboardMetricsRoutes = require("./routes/dashboard-metrics.routes");
 const policiesRoutes = require("./routes/policies.routes"); // Phase 2: Policy management
+const historyRoutes = require("./routes/history.routes"); // Phase 4: Historical metrics
 const errorHandler = require("./middlewares/error.middleware");
 
 const app = express();
@@ -28,6 +29,9 @@ app.use("/api/metrics", dashboardMetricsRoutes);
 
 // Phase 2: Policy management routes
 app.use("/api/policies", policiesRoutes);
+
+// Phase 4: Historical metrics routes
+app.use("/api/history", historyRoutes);
 
 app.get("/health", (req, res) => {
   res.json({ status: "OK", time: new Date() });
