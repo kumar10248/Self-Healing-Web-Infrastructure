@@ -1,5 +1,6 @@
 const { runCommand } = require("../utils/shell");
 const { createAlert, SEVERITY, ALERT_TYPE } = require("./alert.service");
+const policies = require("../config/policies");
 const path = require("path");
 
 // Path to healing scripts
@@ -9,15 +10,11 @@ const KILL_PROCESS_SCRIPT = path.join(SCRIPTS_DIR, "kill-process.sh");
 const CLEANUP_MEMORY_SCRIPT = path.join(SCRIPTS_DIR, "cleanup-memory.sh");
 const CLEANUP_DISK_SCRIPT = path.join(SCRIPTS_DIR, "cleanup-disk.sh");
 
-// Feature 4: Resource thresholds (industry-realistic values)
-const THRESHOLDS = {
-  CPU: 85, // > 85% triggers CPU mitigation
-  MEMORY: 80, // > 80% triggers memory cleanup
-  DISK: 90, // > 90% triggers disk cleanup
-};
+// Phase 2: Thresholds now loaded from policies.json (configurable)
+// No more hard-coded values!
 
 // Cooldown tracking to prevent repeated actions (in milliseconds)
-const COOLDOWN_PERIOD = 60000; // 60 seconds
+// Phase 2: Cooldowns also configurable via policies
 const lastHealingActions = {
   cpu: 0,
   memory: 0,
@@ -139,14 +136,19 @@ async function healResources(metrics) {
   const healingActions = [];
   const now = Date.now();
 
+  // Phase 2: Load policies for thresholds
+  const cpuPolicy = policies.getCpuPolicy();
+  const memoryPolicy = policies.getMemoryPolicy();
+  const diskPolicy = policies.getDiskPolicy();
+
   // CPU Healing
-  if (metrics.cpu > THRESHOLDS.CPU && canHeal("cpu", now)) {
+  if (cpuPolicy.enabled && metrics.cpu > cpuPolicy.threshold && canHeal("cpu", now)) {
     console.log(`\n${"=".repeat(60)}`);
     console.log(`🚨 RESOURCE HEALING TRIGGERED: CPU`);
     console.log(`${"=".repeat(60)}`);
     console.log(`📍 Host:     ${metrics.host}`);
     console.log(`⚙️  CPU:      ${metrics.cpu}%`);
-    console.log(`⚠️  Threshold: ${THRESHOLDS.CPU}%`);
+    console.log(`⚠️  Threshold: ${cpuPolicy.threshold}%`);
     console.log(`🔧 Action:   Kill top CPU consumer`);
     console.log(`⏰ Time:     ${new Date().toISOString()}`);
     console.log(`${"=".repeat(60)}\n`);
@@ -158,8 +160,8 @@ async function healResources(metrics) {
       service: null,
       resource: "CPU",
       severity: SEVERITY.HIGH,
-      message: `CPU healing triggered: ${metrics.cpu}% usage (threshold: ${THRESHOLDS.CPU}%)`,
-      details: { value: metrics.cpu, threshold: THRESHOLDS.CPU, action: "kill-process" },
+      message: `CPU healing triggered: ${metrics.cpu}% usage (threshold: ${cpuPolicy.threshold}%)`,
+      details: { value: metrics.cpu, threshold: cpuPolicy.threshold, action: "kill-process" },
     });
 
     try {
@@ -183,7 +185,7 @@ async function healResources(metrics) {
         type: "resource",
         resource: "cpu",
         value: metrics.cpu,
-        threshold: THRESHOLDS.CPU,
+        threshold: cpuPolicy.threshold,
         status: "success",
         action: "kill-process",
         timestamp: new Date().toISOString(),
@@ -215,13 +217,13 @@ async function healResources(metrics) {
   }
 
   // Memory Healing
-  if (metrics.memory > THRESHOLDS.MEMORY && canHeal("memory", now)) {
+  if (memoryPolicy.enabled && metrics.memory > memoryPolicy.threshold && canHeal("memory", now)) {
     console.log(`\n${"=".repeat(60)}`);
     console.log(`🚨 RESOURCE HEALING TRIGGERED: MEMORY`);
     console.log(`${"=".repeat(60)}`);
     console.log(`📍 Host:     ${metrics.host}`);
     console.log(`💾 Memory:   ${metrics.memory}%`);
-    console.log(`⚠️  Threshold: ${THRESHOLDS.MEMORY}%`);
+    console.log(`⚠️  Threshold: ${memoryPolicy.threshold}%`);
     console.log(`🔧 Action:   Clear system caches`);
     console.log(`⏰ Time:     ${new Date().toISOString()}`);
     console.log(`${"=".repeat(60)}\n`);
@@ -233,8 +235,8 @@ async function healResources(metrics) {
       service: null,
       resource: "Memory",
       severity: SEVERITY.HIGH,
-      message: `Memory healing triggered: ${metrics.memory}% usage (threshold: ${THRESHOLDS.MEMORY}%)`,
-      details: { value: metrics.memory, threshold: THRESHOLDS.MEMORY, action: "clear-caches" },
+      message: `Memory healing triggered: ${metrics.memory}% usage (threshold: ${memoryPolicy.threshold}%)`,
+      details: { value: metrics.memory, threshold: memoryPolicy.threshold, action: "clear-caches" },
     });
 
     try {
@@ -258,7 +260,7 @@ async function healResources(metrics) {
         type: "resource",
         resource: "memory",
         value: metrics.memory,
-        threshold: THRESHOLDS.MEMORY,
+        threshold: memoryPolicy.threshold,
         status: "success",
         action: "clear-caches",
         timestamp: new Date().toISOString(),
@@ -290,13 +292,13 @@ async function healResources(metrics) {
   }
 
   // Disk Healing
-  if (metrics.disk > THRESHOLDS.DISK && canHeal("disk", now)) {
+  if (diskPolicy.enabled && metrics.disk > diskPolicy.threshold && canHeal("disk", now)) {
     console.log(`\n${"=".repeat(60)}`);
     console.log(`🚨 RESOURCE HEALING TRIGGERED: DISK`);
     console.log(`${"=".repeat(60)}`);
     console.log(`📍 Host:     ${metrics.host}`);
     console.log(`💿 Disk:     ${metrics.disk}%`);
-    console.log(`⚠️  Threshold: ${THRESHOLDS.DISK}%`);
+    console.log(`⚠️  Threshold: ${diskPolicy.threshold}%`);
     console.log(`🔧 Action:   Clean logs and temp files`);
     console.log(`⏰ Time:     ${new Date().toISOString()}`);
     console.log(`${"=".repeat(60)}\n`);
@@ -308,8 +310,8 @@ async function healResources(metrics) {
       service: null,
       resource: "Disk",
       severity: SEVERITY.HIGH,
-      message: `Disk healing triggered: ${metrics.disk}% usage (threshold: ${THRESHOLDS.DISK}%)`,
-      details: { value: metrics.disk, threshold: THRESHOLDS.DISK, action: "cleanup-disk" },
+      message: `Disk healing triggered: ${metrics.disk}% usage (threshold: ${diskPolicy.threshold}%)`,
+      details: { value: metrics.disk, threshold: diskPolicy.threshold, action: "cleanup-disk" },
     });
 
     try {
@@ -333,7 +335,7 @@ async function healResources(metrics) {
         type: "resource",
         resource: "disk",
         value: metrics.disk,
-        threshold: THRESHOLDS.DISK,
+        threshold: diskPolicy.threshold,
         status: "success",
         action: "cleanup-disk",
         timestamp: new Date().toISOString(),
@@ -380,13 +382,26 @@ function shouldHealService(service) {
 
 /**
  * Check if we can heal (cooldown protection)
+ * Phase 2: Uses configurable cooldown from policies
  */
 function canHeal(resourceType, now) {
   const lastAction = lastHealingActions[resourceType];
   const timeSinceLastAction = now - lastAction;
   
+  // Get cooldown from policy (in seconds), convert to milliseconds
+  let cooldownMs;
+  if (resourceType === 'cpu') {
+    cooldownMs = policies.getCpuPolicy().cooldown * 1000;
+  } else if (resourceType === 'memory') {
+    cooldownMs = policies.getMemoryPolicy().cooldown * 1000;
+  } else if (resourceType === 'disk') {
+    cooldownMs = policies.getDiskPolicy().cooldown * 1000;
+  } else {
+    cooldownMs = 60000; // Default 60 seconds
+  }
+  
   // Allow healing only if cooldown period has passed
-  return timeSinceLastAction >= COOLDOWN_PERIOD;
+  return timeSinceLastAction >= cooldownMs;
 }
 
 /**

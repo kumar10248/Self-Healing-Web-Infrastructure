@@ -1,8 +1,10 @@
 const { checkAndHeal } = require("./healing.service");
 const { createAlert, SEVERITY, ALERT_TYPE } = require("./alert.service");
 const dashboardService = require("./dashboard.service");
+const policies = require("../config/policies");
 
 // Feature 1, 2, 3, 4 & 5: Monitoring, Detection, Healing & Alerting
+// Phase 2: Now uses configurable policies instead of hard-coded thresholds
 exports.processMetrics = async (metrics) => {
   // Validate metrics
   if (!metrics || typeof metrics !== "object") {
@@ -107,50 +109,50 @@ exports.processMetrics = async (metrics) => {
 
 /**
  * Feature 5: Check resource thresholds and create alerts
+ * Phase 2: Now uses configurable policies from policies.json
  */
 function checkResourceThresholds(metrics) {
-  const THRESHOLDS = {
-    CPU: 85,
-    MEMORY: 80,
-    DISK: 90,
-  };
+  // Phase 2: Load thresholds from policy configuration
+  const cpuPolicy = policies.getCpuPolicy();
+  const memoryPolicy = policies.getMemoryPolicy();
+  const diskPolicy = policies.getDiskPolicy();
 
   // CPU threshold alert
-  if (metrics.cpu > THRESHOLDS.CPU) {
+  if (cpuPolicy.enabled && metrics.cpu > cpuPolicy.threshold) {
     createAlert({
       type: ALERT_TYPE.RESOURCE_HIGH,
       host: metrics.host,
       resource: "CPU",
       value: metrics.cpu,
-      threshold: THRESHOLDS.CPU,
+      threshold: cpuPolicy.threshold,
       severity: metrics.cpu > 95 ? SEVERITY.CRITICAL : SEVERITY.HIGH,
-      message: `High CPU usage detected: ${metrics.cpu}% (threshold: ${THRESHOLDS.CPU}%)`,
+      message: `High CPU usage detected: ${metrics.cpu}% (threshold: ${cpuPolicy.threshold}%)`,
     });
   }
 
   // Memory threshold alert
-  if (metrics.memory > THRESHOLDS.MEMORY) {
+  if (memoryPolicy.enabled && metrics.memory > memoryPolicy.threshold) {
     createAlert({
       type: ALERT_TYPE.RESOURCE_HIGH,
       host: metrics.host,
       resource: "Memory",
       value: metrics.memory,
-      threshold: THRESHOLDS.MEMORY,
+      threshold: memoryPolicy.threshold,
       severity: metrics.memory > 90 ? SEVERITY.CRITICAL : SEVERITY.HIGH,
-      message: `High memory usage detected: ${metrics.memory}% (threshold: ${THRESHOLDS.MEMORY}%)`,
+      message: `High memory usage detected: ${metrics.memory}% (threshold: ${memoryPolicy.threshold}%)`,
     });
   }
 
   // Disk threshold alert
-  if (metrics.disk > THRESHOLDS.DISK) {
+  if (diskPolicy.enabled && metrics.disk > diskPolicy.threshold) {
     createAlert({
       type: ALERT_TYPE.RESOURCE_HIGH,
       host: metrics.host,
       resource: "Disk",
       value: metrics.disk,
-      threshold: THRESHOLDS.DISK,
+      threshold: diskPolicy.threshold,
       severity: metrics.disk > 95 ? SEVERITY.CRITICAL : SEVERITY.HIGH,
-      message: `High disk usage detected: ${metrics.disk}% (threshold: ${THRESHOLDS.DISK}%)`,
+      message: `High disk usage detected: ${metrics.disk}% (threshold: ${diskPolicy.threshold}%)`,
     });
   }
 }

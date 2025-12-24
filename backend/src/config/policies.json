@@ -1,0 +1,49 @@
+{
+  "version": "1.0",
+  "description": "Self-healing infrastructure policies - configurable thresholds and behaviors",
+  
+  "resources": {
+    "cpu": {
+      "threshold": 85,
+      "cooldown": 300,
+      "enabled": true,
+      "description": "CPU usage threshold (percentage) - triggers healing when exceeded"
+    },
+    "memory": {
+      "threshold": 80,
+      "cooldown": 300,
+      "enabled": true,
+      "description": "Memory usage threshold (percentage) - triggers healing when exceeded"
+    },
+    "disk": {
+      "threshold": 90,
+      "cooldown": 600,
+      "enabled": true,
+      "description": "Disk usage threshold (percentage) - triggers cleanup when exceeded"
+    }
+  },
+  
+  "services": {
+    "restartCooldown": 60,
+    "maxRestartAttempts": 3,
+    "enabled": true,
+    "description": "Service restart policies - prevents restart loops"
+  },
+  
+  "alerts": {
+    "cooldown": 30,
+    "enabled": true,
+    "description": "Alert generation cooldown (seconds) - prevents alert spam"
+  },
+  
+  "monitoring": {
+    "interval": 10,
+    "description": "Monitoring interval (seconds) - how often agent sends metrics"
+  },
+  
+  "metadata": {
+    "lastModified": "2025-12-24T00:00:00Z",
+    "author": "system",
+    "notes": "Modify these values to change system behavior without redeploying code"
+  }
+}

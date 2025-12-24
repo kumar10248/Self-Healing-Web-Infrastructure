@@ -7,6 +7,7 @@ const healingRoutes = require("./routes/healing.routes");
 const alertsRoutes = require("./routes/alerts.routes");
 const dashboardRoutes = require("./routes/dashboard.routes");
 const dashboardMetricsRoutes = require("./routes/dashboard-metrics.routes");
+const policiesRoutes = require("./routes/policies.routes"); // Phase 2: Policy management
 const errorHandler = require("./middlewares/error.middleware");
 
 const app = express();
@@ -24,6 +25,9 @@ app.use("/api/alerts", alertsRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 // Mount dashboard metrics routes under /api/metrics (extends existing metrics endpoint)
 app.use("/api/metrics", dashboardMetricsRoutes);
+
+// Phase 2: Policy management routes
+app.use("/api/policies", policiesRoutes);
 
 app.get("/health", (req, res) => {
   res.json({ status: "OK", time: new Date() });
