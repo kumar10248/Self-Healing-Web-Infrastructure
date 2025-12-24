@@ -30,6 +30,13 @@
     "description": "Service restart policies - prevents restart loops"
   },
   
+  "guardrails": {
+    "maxRetries": 3,
+    "retryCooldown": 600,
+    "retryResetAfter": 3600,
+    "description": "Safety guardrails - prevents cascading failures. After maxRetries, healing stops and HIGH alert raised."
+  },
+  
   "alerts": {
     "cooldown": 30,
     "enabled": true,

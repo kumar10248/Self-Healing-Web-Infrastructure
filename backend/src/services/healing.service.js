@@ -13,6 +13,14 @@ const CLEANUP_DISK_SCRIPT = path.join(SCRIPTS_DIR, "cleanup-disk.sh");
 // Phase 2: Thresholds now loaded from policies.json (configurable)
 // No more hard-coded values!
 
+// Phase 3: Safety Guardrails - Retry tracking to prevent infinite loops
+const retryCounters = {
+  cpu: { count: 0, lastResetTime: Date.now() },
+  memory: { count: 0, lastResetTime: Date.now() },
+  disk: { count: 0, lastResetTime: Date.now() },
+  services: {}, // Dynamic per-service tracking: { serviceName: { count, lastResetTime } }
+};
+
 // Cooldown tracking to prevent repeated actions (in milliseconds)
 // Phase 2: Cooldowns also configurable via policies
 const lastHealingActions = {
@@ -54,8 +62,14 @@ async function healServices(metrics) {
 
     // Check if service needs healing
     if (shouldHealService(service)) {
+      // Phase 3: Check retry limit before healing
+      if (!canRetry(service.name, true)) {
+        raiseMaxRetriesAlert(metrics.host, service.name, true);
+        continue; // Skip this service, max retries exceeded
+      }
+      
       console.log(`\n${"=".repeat(60)}`);
-      console.log(`�� SERVICE HEALING TRIGGERED`);
+      console.log(`🔧 SERVICE HEALING TRIGGERED`);
       console.log(`${"=".repeat(60)}`);
       console.log(`📍 Host:    ${metrics.host}`);
       console.log(`🔧 Service: ${service.name}`);
@@ -81,6 +95,9 @@ async function healServices(metrics) {
         console.log(`✅ HEALING SUCCESSFUL: ${service.name}`);
         console.log(`   Output: ${result.trim()}`);
 
+        // Phase 3: Increment retry counter after healing attempt
+        incrementRetryCounter(service.name, true);
+
         // Feature 5: Alert - Healing success
         createAlert({
           type: ALERT_TYPE.HEALING_SUCCESS,
@@ -102,6 +119,9 @@ async function healServices(metrics) {
       } catch (error) {
         console.error(`❌ HEALING FAILED: ${service.name}`);
         console.error(`   Error: ${error.message}`);
+
+        // Phase 3: Increment retry counter even on failure
+        incrementRetryCounter(service.name, true);
 
         // Feature 5: Alert - Healing failure
         createAlert({
@@ -143,6 +163,12 @@ async function healResources(metrics) {
 
   // CPU Healing
   if (cpuPolicy.enabled && metrics.cpu > cpuPolicy.threshold && canHeal("cpu", now)) {
+    // Phase 3: Check retry limit before healing
+    if (!canRetry("cpu")) {
+      raiseMaxRetriesAlert(metrics.host, "cpu", false);
+      return healingActions; // Stop healing, max retries exceeded
+    }
+    
     console.log(`\n${"=".repeat(60)}`);
     console.log(`🚨 RESOURCE HEALING TRIGGERED: CPU`);
     console.log(`${"=".repeat(60)}`);
@@ -169,6 +195,9 @@ async function healResources(metrics) {
       console.log(`✅ CPU MITIGATION SUCCESSFUL`);
       console.log(`   ${result.trim()}`);
       
+      // Phase 3: Increment retry counter after healing attempt
+      incrementRetryCounter("cpu");
+      
       // Feature 5: Alert - Resource healing success
       createAlert({
         type: ALERT_TYPE.HEALING_SUCCESS,
@@ -194,6 +223,9 @@ async function healResources(metrics) {
       console.error(`❌ CPU MITIGATION FAILED`);
       console.error(`   Error: ${error.message}`);
       
+      // Phase 3: Increment retry counter even on failure
+      incrementRetryCounter("cpu");
+      
       // Feature 5: Alert - Resource healing failure
       createAlert({
         type: ALERT_TYPE.HEALING_FAILED,
@@ -218,6 +250,12 @@ async function healResources(metrics) {
 
   // Memory Healing
   if (memoryPolicy.enabled && metrics.memory > memoryPolicy.threshold && canHeal("memory", now)) {
+    // Phase 3: Check retry limit before healing
+    if (!canRetry("memory")) {
+      raiseMaxRetriesAlert(metrics.host, "memory", false);
+      return healingActions; // Stop healing, max retries exceeded
+    }
+    
     console.log(`\n${"=".repeat(60)}`);
     console.log(`🚨 RESOURCE HEALING TRIGGERED: MEMORY`);
     console.log(`${"=".repeat(60)}`);
@@ -244,6 +282,9 @@ async function healResources(metrics) {
       console.log(`✅ MEMORY CLEANUP SUCCESSFUL`);
       console.log(`   ${result.trim()}`);
       
+      // Phase 3: Increment retry counter after healing attempt
+      incrementRetryCounter("memory");
+      
       // Feature 5: Alert - Memory healing success
       createAlert({
         type: ALERT_TYPE.HEALING_SUCCESS,
@@ -269,6 +310,9 @@ async function healResources(metrics) {
       console.error(`❌ MEMORY CLEANUP FAILED`);
       console.error(`   Error: ${error.message}`);
       
+      // Phase 3: Increment retry counter even on failure
+      incrementRetryCounter("memory");
+      
       // Feature 5: Alert - Memory healing failure
       createAlert({
         type: ALERT_TYPE.HEALING_FAILED,
@@ -293,6 +337,12 @@ async function healResources(metrics) {
 
   // Disk Healing
   if (diskPolicy.enabled && metrics.disk > diskPolicy.threshold && canHeal("disk", now)) {
+    // Phase 3: Check retry limit before healing
+    if (!canRetry("disk")) {
+      raiseMaxRetriesAlert(metrics.host, "disk", false);
+      return healingActions; // Stop healing, max retries exceeded
+    }
+    
     console.log(`\n${"=".repeat(60)}`);
     console.log(`🚨 RESOURCE HEALING TRIGGERED: DISK`);
     console.log(`${"=".repeat(60)}`);
@@ -319,6 +369,9 @@ async function healResources(metrics) {
       console.log(`✅ DISK CLEANUP SUCCESSFUL`);
       console.log(`   ${result.trim()}`);
       
+      // Phase 3: Increment retry counter after healing attempt
+      incrementRetryCounter("disk");
+      
       // Feature 5: Alert - Disk healing success
       createAlert({
         type: ALERT_TYPE.HEALING_SUCCESS,
@@ -343,6 +396,9 @@ async function healResources(metrics) {
     } catch (error) {
       console.error(`❌ DISK CLEANUP FAILED`);
       console.error(`   Error: ${error.message}`);
+      
+      // Phase 3: Increment retry counter even on failure
+      incrementRetryCounter("disk");
       
       // Feature 5: Alert - Disk healing failure
       createAlert({
@@ -403,6 +459,98 @@ function canHeal(resourceType, now) {
   // Allow healing only if cooldown period has passed
   return timeSinceLastAction >= cooldownMs;
 }
+
+/**
+ * Phase 3: Safety Guardrail - Retry counter
+ * Prevents infinite healing loops by tracking retry attempts
+ */
+function canRetry(resourceOrService, isService = false) {
+  const guardrails = policies.getGuardrails();
+  const now = Date.now();
+  
+  let counter;
+  if (isService) {
+    // Initialize service counter if not exists
+    if (!retryCounters.services[resourceOrService]) {
+      retryCounters.services[resourceOrService] = { count: 0, lastResetTime: now };
+    }
+    counter = retryCounters.services[resourceOrService];
+  } else {
+    counter = retryCounters[resourceOrService];
+  }
+  
+  // Reset counter if enough time has passed (default: 1 hour)
+  const resetAfterMs = (guardrails.retryResetAfter || 3600) * 1000;
+  if (now - counter.lastResetTime > resetAfterMs) {
+    counter.count = 0;
+    counter.lastResetTime = now;
+  }
+  
+  // Check if max retries exceeded
+  const maxRetries = guardrails.maxRetries || 3;
+  if (counter.count >= maxRetries) {
+    return false;
+  }
+  
+  return true;
+}
+
+/**
+ * Phase 3: Increment retry counter after healing attempt
+ */
+function incrementRetryCounter(resourceOrService, isService = false) {
+  if (isService) {
+    if (!retryCounters.services[resourceOrService]) {
+      retryCounters.services[resourceOrService] = { count: 0, lastResetTime: Date.now() };
+    }
+    retryCounters.services[resourceOrService].count++;
+  } else {
+    retryCounters[resourceOrService].count++;
+  }
+}
+
+/**
+ * Phase 3: Get current retry count (for debugging/monitoring)
+ */
+function getRetryCount(resourceOrService, isService = false) {
+  if (isService) {
+    return retryCounters.services[resourceOrService]?.count || 0;
+  }
+  return retryCounters[resourceOrService]?.count || 0;
+}
+
+/**
+ * Phase 3: Raise HIGH alert when max retries exceeded
+ */
+function raiseMaxRetriesAlert(host, resourceOrService, isService = false) {
+  const guardrails = policies.getGuardrails();
+  const maxRetries = guardrails.maxRetries || 3;
+  
+  createAlert({
+    type: ALERT_TYPE.HEALING_FAILED,
+    host: host,
+    service: isService ? resourceOrService : null,
+    resource: isService ? null : resourceOrService.toUpperCase(),
+    severity: SEVERITY.HIGH,
+    message: `🚨 MAX RETRIES EXCEEDED: Auto-healing stopped for ${isService ? 'service' : 'resource'} "${resourceOrService}"`,
+    details: {
+      maxRetries: maxRetries,
+      currentCount: getRetryCount(resourceOrService, isService),
+      action: "auto_healing_disabled",
+      recommendation: "Manual intervention required. Check logs and resolve underlying issue.",
+    },
+  });
+  
+  console.log(`\n${"=".repeat(60)}`);
+  console.log(`🚨 MAX RETRIES EXCEEDED - AUTO-HEALING STOPPED`);
+  console.log(`${"=".repeat(60)}`);
+  console.log(`📍 ${isService ? 'Service' : 'Resource'}: ${resourceOrService}`);
+  console.log(`🔢 Retry Count: ${getRetryCount(resourceOrService, isService)}/${maxRetries}`);
+  console.log(`⛔ Action: Auto-healing disabled`);
+  console.log(`💡 Recommendation: Manual intervention required`);
+  console.log(`${"=".repeat(60)}\n`);
+}
+
 
 /**
  * Execute healing action for a service

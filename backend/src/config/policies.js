@@ -92,6 +92,11 @@ function getDefaultPolicies() {
       maxRestartAttempts: 3,
       enabled: true,
     },
+    guardrails: {
+      maxRetries: 3,
+      retryCooldown: 600,
+      retryResetAfter: 3600,
+    },
     alerts: {
       cooldown: 30,
       enabled: true,
@@ -163,6 +168,22 @@ function getAllPolicies() {
 }
 
 /**
+ * Phase 3: Get safety guardrails configuration
+ */
+function getGuardrails() {
+  if (!policies) {
+    loadPolicies();
+  }
+  
+  // Return guardrails with safe defaults
+  return policies.guardrails || {
+    maxRetries: 3,
+    retryCooldown: 600,
+    retryResetAfter: 3600,
+  };
+}
+
+/**
  * Reload policies from file (hot-reload)
  * Useful for updating thresholds without restart
  */
@@ -221,6 +242,7 @@ module.exports = {
   getDiskPolicy,
   getServicePolicy,
   getAlertPolicy,
+  getGuardrails,
   getPolicyInfo,
   isResourceHealingEnabled,
   isServiceHealingEnabled,
