@@ -1,6 +1,9 @@
 // Feature 5: Alerting & Event Visibility Service
+// Phase 1: Database persistence for 30-day operational history
 
-const eventLog = []; // In-memory event log (Feature 5 - no database yet)
+const dbService = require('../database/db.service');
+
+const eventLog = []; // Keep in-memory cache for backward compatibility
 const MAX_LOG_SIZE = 1000; // Keep last 1000 events
 
 // Alert severity levels
@@ -29,7 +32,7 @@ const COOLDOWN_MS = 30000; // 30 seconds
 /**
  * Create and log an alert
  */
-exports.createAlert = (alertData) => {
+exports.createAlert = async (alertData) => {
   // Validate required fields
   if (!alertData.type || !alertData.host || !alertData.message) {
     console.error("❌ Alert missing required fields:", alertData);
@@ -56,8 +59,16 @@ exports.createAlert = (alertData) => {
     return null; // Silently skip duplicate alerts
   }
 
-  // Log to event store
+  // Log to event store (in-memory)
   addToEventLog(alert);
+
+  // Save to database (Phase 1: persistence)
+  try {
+    await dbService.insertAlert(alert);
+  } catch (error) {
+    console.error('❌ Failed to save alert to database:', error.message);
+    // Continue execution even if DB fails (graceful degradation)
+  }
 
   // Display alert in console
   displayAlert(alert);
@@ -70,9 +81,18 @@ exports.createAlert = (alertData) => {
 
 /**
  * Get recent alerts (for API endpoint)
+ * Phase 1: Now reads from database
  */
-exports.getRecentAlerts = (limit = 50) => {
-  return eventLog.slice(-limit).reverse(); // Most recent first
+exports.getRecentAlerts = async (filters = {}) => {
+  try {
+    // Try to get from database first
+    const alerts = await dbService.getAlerts({ ...filters, limit: filters.limit || 50 });
+    return alerts;
+  } catch (error) {
+    console.error('❌ Failed to fetch alerts from database:', error.message);
+    // Fallback to in-memory cache
+    return eventLog.slice(-50).reverse();
+  }
 };
 
 /**

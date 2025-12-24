@@ -1,12 +1,15 @@
 /**
  * Feature 6 (Part-A): Dashboard Data Service
+ * Phase 1: Database persistence for metrics and healing history
  * 
- * In-memory storage for system state data.
- * Provides centralized access to latest metrics, services, alerts, and healing history.
+ * Hybrid approach: In-memory cache + Database persistence
  */
 
+const dbService = require('../database/db.service');
+const os = require('os');
+
 // ============================================================================
-// IN-MEMORY DATA STORES
+// IN-MEMORY DATA STORES (for quick access + backward compatibility)
 // ============================================================================
 
 /**
@@ -23,8 +26,7 @@ let latestMetrics = null;
 let services = {};
 
 /**
- * Healing history (last 100 actions)
- * Stores all healing actions (service restarts, resource cleanup)
+ * Healing history (in-memory cache for quick access)
  */
 const MAX_HEALING_HISTORY = 100;
 let healingHistory = [];
@@ -36,8 +38,10 @@ let healingHistory = [];
 /**
  * Update latest metrics
  * Called by monitoring.service.js when agent sends metrics
+ * Phase 1: Now also saves to database
  */
-exports.updateMetrics = (metrics) => {
+exports.updateMetrics = async (metrics) => {
+  // Update in-memory cache
   latestMetrics = {
     host: metrics.host,
     cpu: metrics.cpu,
@@ -45,6 +49,14 @@ exports.updateMetrics = (metrics) => {
     disk: metrics.disk,
     timestamp: metrics.timestamp,
   };
+  
+  // Save to database (Phase 1: persistence)
+  try {
+    await dbService.insertMetric(latestMetrics);
+  } catch (error) {
+    console.error('❌ Failed to save metrics to database:', error.message);
+    // Continue execution (graceful degradation)
+  }
 };
 
 /**
@@ -80,35 +92,54 @@ exports.updateServices = (serviceArray, timestamp) => {
 /**
  * Add healing action to history
  * Called by healing.service.js after executing healing action
+ * Phase 1: Now also saves to database
  */
-exports.addHealingAction = (action) => {
+exports.addHealingAction = async (action) => {
   const healingEntry = {
     action: action.action || action.type,
     target: action.service || action.resource || "unknown",
     result: action.status,
     details: action.error || action.message || null,
+    host: action.host || os.hostname(),
     timestamp: action.timestamp || new Date().toISOString(),
   };
 
-  // Add to beginning of array
+  // Add to in-memory cache
   healingHistory.unshift(healingEntry);
 
   // Keep only last MAX_HEALING_HISTORY entries
   if (healingHistory.length > MAX_HEALING_HISTORY) {
     healingHistory = healingHistory.slice(0, MAX_HEALING_HISTORY);
   }
+  
+  // Save to database (Phase 1: persistence)
+  try {
+    await dbService.insertHealingAction(healingEntry);
+  } catch (error) {
+    console.error('❌ Failed to save healing action to database:', error.message);
+    // Continue execution (graceful degradation)
+  }
 };
 
 // ============================================================================
 // READ FUNCTIONS (called by API controllers)
+// Phase 1: Now reads from database with in-memory fallback
 // ============================================================================
 
 /**
  * Get latest system metrics
  * Returns null if no metrics available yet
+ * Phase 1: Tries database first, falls back to memory
  */
-exports.getLatestMetrics = () => {
-  return latestMetrics;
+exports.getLatestMetrics = async () => {
+  try {
+    const host = os.hostname();
+    const dbMetric = await dbService.getLatestMetric(host);
+    return dbMetric || latestMetrics;
+  } catch (error) {
+    console.error('❌ Failed to fetch metrics from database:', error.message);
+    return latestMetrics; // Fallback to in-memory
+  }
 };
 
 /**
@@ -143,12 +174,21 @@ exports.getServiceStatus = (serviceName) => {
  * Get healing history
  * @param {number} limit - Maximum number of entries to return (default: all)
  * @returns {Array} Array of healing actions
+ * Phase 1: Now reads from database with in-memory fallback
  */
-exports.getHealingHistory = (limit = null) => {
-  if (limit && typeof limit === "number" && limit > 0) {
-    return healingHistory.slice(0, limit);
+exports.getHealingHistory = async (limit = null) => {
+  try {
+    const host = os.hostname();
+    const dbHistory = await dbService.getHealingActions({ host, limit: limit || 100 });
+    return dbHistory.length > 0 ? dbHistory : healingHistory;
+  } catch (error) {
+    console.error('❌ Failed to fetch healing history from database:', error.message);
+    // Fallback to in-memory
+    if (limit && typeof limit === "number" && limit > 0) {
+      return healingHistory.slice(0, limit);
+    }
+    return healingHistory;
   }
-  return healingHistory;
 };
 
 /**

@@ -9,7 +9,9 @@ const alertService = require("../services/alert.service");
 exports.getAlerts = async (req, res, next) => {
   try {
     const limit = parseInt(req.query.limit) || 50;
-    const alerts = alertService.getRecentAlerts(limit);
+    const type = req.query.type; // Optional filter by type
+    
+    const alerts = await alertService.getRecentAlerts({ limit, type });
 
     res.json({
       success: true,

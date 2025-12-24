@@ -11,10 +11,11 @@ const alertService = require("../services/alert.service");
 /**
  * Get latest system metrics
  * GET /api/metrics/latest
+ * Phase 1: Now async to support database reads
  */
-exports.getLatestMetrics = (req, res) => {
+exports.getLatestMetrics = async (req, res) => {
   try {
-    const metrics = dashboardService.getLatestMetrics();
+    const metrics = await dashboardService.getLatestMetrics();
 
     if (!metrics) {
       return res.status(200).json({
@@ -102,8 +103,9 @@ exports.getServiceStatus = (req, res) => {
 /**
  * Get healing history
  * GET /api/heal/history?limit=50
+ * Phase 1: Now async to support database reads
  */
-exports.getHealingHistory = (req, res) => {
+exports.getHealingHistory = async (req, res) => {
   try {
     const limit = req.query.limit ? parseInt(req.query.limit, 10) : null;
 
@@ -114,7 +116,7 @@ exports.getHealingHistory = (req, res) => {
       });
     }
 
-    const history = dashboardService.getHealingHistory(limit);
+    const history = await dashboardService.getHealingHistory(limit);
 
     return res.status(200).json({
       success: true,
